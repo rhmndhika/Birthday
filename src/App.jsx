@@ -246,26 +246,6 @@ const BirthdaySurprise = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
-      {/* Admin/User Indicator */}
-      <div className="fixed top-4 right-4 z-50">
-        <div
-          className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${
-            isAdmin
-              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-              : "bg-white text-gray-700"
-          }`}
-        >
-          {isAdmin ? (
-            <Lock className="w-4 h-4" />
-          ) : (
-            <User className="w-4 h-4" />
-          )}
-          <span className="text-sm font-semibold">
-            {isAdmin ? "Mode Admin" : "Mode User"}
-          </span>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white py-12 px-4">
         <div className="absolute inset-0 opacity-20">
@@ -466,21 +446,6 @@ const BirthdaySurprise = () => {
           />
           <p className="text-lg md:text-xl font-semibold mb-2">
             Dibuat dengan ❤️ untuk hari spesialmu
-          </p>
-          {!isAdmin && (
-            <p className="text-sm opacity-80 mt-4">
-              Ingin mengedit? Buka{" "}
-              <span className="font-mono bg-white/20 px-2 py-1 rounded">
-                /admin
-              </span>{" "}
-              di URL
-            </p>
-          )}
-          <p className="text-xs opacity-70 mt-4">
-            💾{" "}
-            {isClaudeArtifact
-              ? "Semua perubahan tersimpan dan bisa dilihat semua orang"
-              : "Mode development: Data tersimpan di browser lokal"}
           </p>
         </div>
       </div>
