@@ -12,19 +12,29 @@ import {
   Edit2,
   Save,
   X,
+  AlertCircle,
 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 
-const BirthdaySurprise = () => {
+// Replace dengan credentials Supabase Anda
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function App() {
   const isAdmin = window.location.pathname === "/admin";
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
+  const [error, setError] = useState(null);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
     category: "memories",
   });
+  const [items, setItems] = useState([]);
 
   const categories = [
     { id: "all", name: "Semua", icon: Sparkles },
@@ -34,166 +44,103 @@ const BirthdaySurprise = () => {
     { id: "fun", name: "Seru-seruan", icon: Star },
   ];
 
-  const defaultItems = [
-    {
-      id: 1,
-      category: "memories",
-      type: "image",
-      url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800",
-      title: "Momen Spesial",
-      description: "Kenangan indah kita bersama",
-    },
-    {
-      id: 2,
-      category: "wishes",
-      type: "text",
-      title: "Selamat Ulang Tahun! 🎂",
-      description:
-        "Semoga semua impianmu tercapai, sehat selalu, dan bahagia selamanya!",
-    },
-    {
-      id: 3,
-      category: "memories",
-      type: "image",
-      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800",
-      title: "Petualangan Kita",
-      description: "Tempat favorit kita",
-    },
-    {
-      id: 4,
-      category: "fun",
-      type: "image",
-      url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800",
-      title: "Tawa & Canda",
-      description: "Moment lucu yang tak terlupakan",
-    },
-    {
-      id: 5,
-      category: "gifts",
-      type: "text",
-      title: "Hadiah Spesial 🎁",
-      description: "Aku sudah siapkan sesuatu yang spesial untukmu!",
-    },
-    {
-      id: 6,
-      category: "memories",
-      type: "image",
-      url: "https://images.unsplash.com/photo-1511988617509-a57c8a288659?w=800",
-      title: "Sweet Moments",
-      description: "Kebersamaan yang manis",
-    },
-  ];
-
-  const [items, setItems] = useState([]);
-
-  // Check if window.storage is available (Claude Artifacts) or use localStorage
-  const isClaudeArtifact = typeof window.storage !== "undefined";
-
-  // Load data dari storage
   useEffect(() => {
     loadItems();
+
+    // Real-time subscription
+    const subscription = supabase
+      .channel("birthday_items_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "birthday_items" },
+        () => loadItems()
+      )
+      .subscribe();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const loadItems = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      if (isClaudeArtifact) {
-        // Use window.storage (Claude Artifacts - shared storage)
-        try {
-          const result = await window.storage.get("birthday-items", true);
-          if (result && result.value) {
-            setItems(JSON.parse(result.value));
-          } else {
-            setItems(defaultItems);
-            await window.storage.set(
-              "birthday-items",
-              JSON.stringify(defaultItems),
-              true
-            );
-          }
-        } catch (error) {
-          console.log("Using default items");
-          setItems(defaultItems);
-        }
-      } else {
-        // Use localStorage (Local development)
-        const saved = localStorage.getItem("birthday-items");
-        if (saved) {
-          setItems(JSON.parse(saved));
-        } else {
-          setItems(defaultItems);
-          localStorage.setItem("birthday-items", JSON.stringify(defaultItems));
-        }
-      }
+      const { data, error } = await supabase
+        .from("birthday_items")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) throw error;
+      setItems(data || []);
     } catch (error) {
       console.error("Error loading items:", error);
-      setItems(defaultItems);
+      setError("Gagal memuat data: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveItems = async (newItems) => {
-    try {
-      if (isClaudeArtifact) {
-        // Save to window.storage (Claude Artifacts - shared)
-        await window.storage.set(
-          "birthday-items",
-          JSON.stringify(newItems),
-          true
-        );
-      } else {
-        // Save to localStorage (Local development)
-        localStorage.setItem("birthday-items", JSON.stringify(newItems));
-      }
-      setItems(newItems);
-    } catch (error) {
-      console.error("Error saving:", error);
-      alert("Gagal menyimpan perubahan. Error: " + error.message);
-    }
-  };
-
   const handleImageUpload = async (e, itemId) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 4 * 1024 * 1024) {
-        alert("Ukuran file maksimal 4MB");
-        return;
-      }
+    if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const newItems = items.map((item) =>
-          item.id === itemId ? { ...item, url: event.target.result } : item
-        );
-        await saveItems(newItems);
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 4 * 1024 * 1024) {
+      alert("Ukuran file maksimal 4MB");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const { error } = await supabase
+          .from("birthday_items")
+          .update({ url: event.target.result })
+          .eq("id", itemId);
+
+        if (error) throw error;
+        await loadItems();
+        alert("Foto berhasil diupdate!");
+      } catch (error) {
+        alert("Gagal mengupdate foto: " + error.message);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddMoment = async () => {
-    const newId =
-      items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
-    const newItems = [
-      ...items,
-      {
-        id: newId,
-        category: "memories",
-        type: "image",
-        url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
-        title: "Momen Baru",
-        description: "Tambahkan kenangan spesial",
-      },
-    ];
-    await saveItems(newItems);
+    try {
+      const { error } = await supabase.from("birthday_items").insert([
+        {
+          category: "memories",
+          type: "image",
+          url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
+          title: "Momen Baru",
+          description: "Tambahkan kenangan spesial",
+        },
+      ]);
+
+      if (error) throw error;
+      await loadItems();
+      alert("Momen baru berhasil ditambahkan!");
+    } catch (error) {
+      alert("Gagal menambahkan momen: " + error.message);
+    }
   };
 
   const handleDeleteItem = async (itemId) => {
-    if (confirm("Hapus momen ini?")) {
-      const newItems = items.filter((item) => item.id !== itemId);
-      await saveItems(newItems);
+    if (!confirm("Hapus momen ini?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("birthday_items")
+        .delete()
+        .eq("id", itemId);
+
+      if (error) throw error;
+      await loadItems();
+      alert("Momen berhasil dihapus!");
+    } catch (error) {
+      alert("Gagal menghapus momen: " + error.message);
     }
   };
 
@@ -212,18 +159,24 @@ const BirthdaySurprise = () => {
   };
 
   const saveEdit = async (itemId) => {
-    const newItems = items.map((item) =>
-      item.id === itemId
-        ? {
-            ...item,
-            title: editForm.title,
-            description: editForm.description,
-            category: editForm.category,
-          }
-        : item
-    );
-    await saveItems(newItems);
-    setEditingItem(null);
+    try {
+      const { error } = await supabase
+        .from("birthday_items")
+        .update({
+          title: editForm.title,
+          description: editForm.description,
+          category: editForm.category,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", itemId);
+
+      if (error) throw error;
+      await loadItems();
+      setEditingItem(null);
+      alert("Perubahan berhasil disimpan!");
+    } catch (error) {
+      alert("Gagal menyimpan perubahan: " + error.message);
+    }
   };
 
   const filteredItems =
@@ -244,29 +197,50 @@ const BirthdaySurprise = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Oops!</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={loadItems}
+            className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-6 py-2 rounded-full hover:shadow-lg"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
+      {/* Admin/User Indicator */}
+      <div className="fixed top-4 right-4 z-50">
+        <div
+          className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${
+            isAdmin
+              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+              : "bg-white text-gray-700"
+          }`}
+        >
+          {isAdmin ? (
+            <Lock className="w-4 h-4" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
+          <span className="text-sm font-semibold">
+            {isAdmin ? "Mode Admin" : "Mode User"}
+          </span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white py-12 px-4">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-10 left-10 animate-bounce">
-            <Heart className="w-8 h-8" fill="currentColor" />
-          </div>
-          <div className="absolute top-20 right-20 animate-pulse">
-            <Star className="w-6 h-6" fill="currentColor" />
-          </div>
-          <div className="absolute bottom-10 left-1/4 animate-bounce delay-100">
-            <Cake className="w-10 h-10" />
-          </div>
-          <div className="absolute bottom-20 right-1/3 animate-pulse delay-200">
-            <Sparkles className="w-7 h-7" />
-          </div>
-        </div>
-
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="flex justify-center mb-4">
-            <Cake className="w-16 h-16 animate-bounce" />
-          </div>
+          <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" />
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             Selamat Ulang Tahun! 🎉
           </h1>
@@ -329,9 +303,9 @@ const BirthdaySurprise = () => {
                 </div>
               ) : (
                 <div className="h-64 bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center p-6">
-                  <div className="text-center text-white">
-                    <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
-                  </div>
+                  <h3 className="text-2xl font-bold text-white text-center">
+                    {item.title}
+                  </h3>
                 </div>
               )}
 
@@ -379,15 +353,13 @@ const BirthdaySurprise = () => {
                         onClick={() => saveEdit(item.id)}
                         className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2"
                       >
-                        <Save className="w-4 h-4" />
-                        Simpan
+                        <Save className="w-4 h-4" /> Simpan
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="flex-1 bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 flex items-center justify-center gap-2"
                       >
-                        <X className="w-4 h-4" />
-                        Batal
+                        <X className="w-4 h-4" /> Batal
                       </button>
                     </div>
                   </div>
@@ -424,7 +396,7 @@ const BirthdaySurprise = () => {
           ))}
         </div>
 
-        {/* Add More Button - Only for Admin */}
+        {/* Add More Button */}
         {isAdmin && (
           <div className="text-center mt-8">
             <button
@@ -446,6 +418,18 @@ const BirthdaySurprise = () => {
           />
           <p className="text-lg md:text-xl font-semibold mb-2">
             Dibuat dengan ❤️ untuk hari spesialmu
+          </p>
+          {!isAdmin && (
+            <p className="text-sm opacity-80 mt-4">
+              Ingin mengedit? Buka{" "}
+              <span className="font-mono bg-white/20 px-2 py-1 rounded">
+                /admin
+              </span>{" "}
+              di URL
+            </p>
+          )}
+          <p className="text-xs opacity-70 mt-4">
+            💾 Semua perubahan tersimpan di cloud dan real-time sync!
           </p>
         </div>
       </div>
@@ -473,6 +457,6 @@ const BirthdaySurprise = () => {
       )}
     </div>
   );
-};
+}
 
-export default BirthdaySurprise;
+export default App;
