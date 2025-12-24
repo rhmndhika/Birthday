@@ -44,34 +44,98 @@ const LoadingScreen = () => {
 
 // Waiting Screen Component
 const WaitingScreen = ({ daysUntil }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+
+    if (!isUnlocked) {
+      setIsUnlocked(true);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {});
+    }
+
+    setIsPlaying(!isPlaying);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md text-center">
-        <img
-          src="https://media.tenor.com/KtaMrc5ZcH4AAAAi/bubu-dudu-sseeyall.gif"
-          alt="Waiting"
-          className="w-64 h-64 mx-auto mb-6 rounded-2xl"
-        />
-        <Lock className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">
-          Tunggu Dulu Ya! 🎁
-        </h2>
-        <p className="text-lg text-gray-600 mb-2">
-          Kejutan spesial ini baru bisa dibuka pada:
-        </p>
-        <p className="text-2xl font-bold text-pink-500 mb-4">
-          28 Desember 2025
-        </p>
-        <div className="bg-gradient-to-r from-pink-100 to-purple-100 rounded-xl p-4">
-          <p className="text-4xl font-bold text-purple-600 mb-1">
-            {daysUntil}
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
+      {/* AUDIO */}
+      <audio
+        ref={audioRef}
+        loop
+        preload="auto"
+        src="/music/backsound.mp3"
+      />
+
+      {/* HEADER (SAMA DENGAN HOME) */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" />
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Selamat Ulang Tahun Tria! 🎉
+          </h1>
+          <p className="text-lg md:text-xl opacity-90">
+            Kejutannya belum bisa dibuka dulu yaa 💝
           </p>
-          <p className="text-gray-600">hari lagi! 🎉</p>
         </div>
       </div>
+
+      {/* CONTENT */}
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-xl mx-auto">
+          <img
+            src="https://media.tenor.com/KtaMrc5ZcH4AAAAi/bubu-dudu-sseeyall.gif"
+            alt="Waiting"
+            className="w-56 h-56 mx-auto mb-6 rounded-2xl"
+          />
+
+          <Lock className="w-14 h-14 text-purple-500 mx-auto mb-4" />
+
+          <h2 className="text-3xl font-bold text-gray-800 mb-3">
+            Tunggu Sebentar Ya 🎁
+          </h2>
+
+          <p className="text-gray-600 mb-4">
+            Kejutan spesial ini baru bisa dibuka pada
+          </p>
+
+          <p className="text-2xl font-bold text-pink-500 mb-6">
+            28 Desember 2025
+          </p>
+
+          <div className="bg-gradient-to-r from-pink-100 to-purple-100 rounded-2xl p-6 mb-4">
+            <p className="text-5xl font-bold text-purple-600">
+              {daysUntil}
+            </p>
+            <p className="text-gray-600 mt-1">hari lagi ✨</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 🎵 MUSIC CONTROL — SAMA DENGAN HOME */}
+      <button
+        onClick={toggleMusic}
+        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-all flex items-center gap-2"
+      >
+        <Music className="w-5 h-5" />
+        {isPlaying ? (
+          <Pause className="w-5 h-5" />
+        ) : (
+          <Play className="w-5 h-5" />
+        )}
+      </button>
     </div>
   );
 };
+
+
 
 // Error Component
 const ErrorScreen = ({ error, onRetry }) => {
