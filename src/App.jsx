@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Play, Pause, Music } from "lucide-react";
+import { useRef } from "react";
 import {
   Heart,
   Cake,
@@ -90,6 +92,132 @@ const ErrorScreen = ({ error, onRetry }) => {
   );
 };
 
+// Edit Modal Component
+const EditModal = ({ item, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    type: item.type,
+    url: item.url
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(item.id, formData);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold text-gray-800">✏️ Edit Momen</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-8 h-8" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Judul
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Deskripsi
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none min-h-32"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Kategori
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none"
+            >
+              <option value="memories">Kenangan</option>
+              <option value="wishes">Ucapan</option>
+              <option value="gifts">Hadiah</option>
+              <option value="fun">Seru-seruan</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tipe
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none"
+            >
+              <option value="image">Gambar</option>
+              <option value="text">Teks</option>
+            </select>
+          </div>
+
+          {formData.type === "image" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                URL Gambar
+              </label>
+              <input
+                type="text"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none"
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Simpan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Letter Modal Component
 const LetterModal = ({ wish, onClose }) => {
   return (
@@ -128,7 +256,7 @@ const LetterModal = ({ wish, onClose }) => {
             
             <div className="mt-6 pt-4 border-t-2 border-pink-200">
               <p className="text-right text-gray-500 italic">
-                Dengan cinta, ❤️
+                Dengan cinta, Dudu ❤️
               </p>
             </div>
           </div>
@@ -274,10 +402,10 @@ const Header = () => {
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" />
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Selamat Ulang Tahun! 🎉
+          Selamat Ulang Tahun Tria! 🎉
         </h1>
         <p className="text-lg md:text-xl opacity-90">
-          Untuk orang spesial di hari istimewa ✨
+          Untuk orang spesial akuuu di hari istimewa ini ✨
         </p>
       </div>
     </div>
@@ -308,21 +436,24 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedWish, setSelectedWish] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [items, setItems] = useState([]);
   const [isDateAllowed, setIsDateAllowed] = useState(true);
   const [daysUntilBirthday, setDaysUntilBirthday] = useState(0);
 
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showStart, setShowStart] = useState(true);
+
   const categories = [
     { id: "all", name: "Semua", icon: Sparkles },
-    { id: "memories", name: "Kenangan", icon: Camera },
     { id: "wishes", name: "Ucapan", icon: MessageCircle },
-    { id: "gifts", name: "Hadiah", icon: Gift },
-    { id: "fun", name: "Seru-seruan", icon: Star },
+    { id: "memories", name: "Kenangan", icon: Camera }
   ];
 
-  // Check if today is December 28, 2025
+  // Check if today is December 28, 2025 OR has special access
   useEffect(() => {
     const checkDate = () => {
       const today = new Date();
@@ -336,11 +467,19 @@ function App() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
       setDaysUntilBirthday(diffDays);
-      setIsDateAllowed(diffDays <= 0);
+      
+      // Check for special access methods:
+      // 1. URL parameter: ?unlock=birthday2025
+      // 2. Admin access
+      // 3. Date is reached
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasUnlockKey = urlParams.get('unlock') === 'birthday2025';
+      
+      setIsDateAllowed(diffDays <= 0 || hasUnlockKey || isAdmin);
     };
 
     checkDate();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (isDateAllowed) {
@@ -358,6 +497,20 @@ function App() {
       return () => subscription.unsubscribe();
     }
   }, [isDateAllowed]);
+
+
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+
+    setIsPlaying(!isPlaying);
+  };
+
 
   const loadItems = async () => {
     try {
@@ -443,6 +596,26 @@ function App() {
     }
   };
 
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+  };
+
+  const handleSaveEdit = async (itemId, formData) => {
+    try {
+      const { error } = await supabase
+        .from("birthday_items")
+        .update(formData)
+        .eq("id", itemId);
+
+      if (error) throw error;
+      await loadItems();
+      setEditingItem(null);
+      alert("Momen berhasil diupdate!");
+    } catch (error) {
+      alert("Gagal mengupdate momen: " + error.message);
+    }
+  };
+
   const handleItemClick = (item) => {
     if (item.category === "wishes") {
       setSelectedWish(item);
@@ -473,6 +646,13 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
       <Header />
 
+      <audio
+        ref={audioRef}
+        loop
+        preload="auto"
+        src="/music/backsound.mp3"
+      />
+
       {/* Categories */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-wrap gap-2 md:gap-4 justify-center mb-8">
@@ -494,7 +674,7 @@ function App() {
               item={item}
               isAdmin={isAdmin}
               onImageClick={handleItemClick}
-              onEdit={() => {}}
+              onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onImageUpload={handleImageUpload}
             />
@@ -514,9 +694,26 @@ function App() {
         )}
       </div>
 
+      <button
+        onClick={toggleMusic}
+        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-all flex items-center gap-2"
+      >
+        <Music className="w-5 h-5" />
+        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+      </button>
+
+
       <Footer />
 
       {/* Modals */}
+      {editingItem && (
+        <EditModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
+
       {selectedWish && (
         <LetterModal
           wish={selectedWish}
