@@ -17,7 +17,6 @@ import {
   Images,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
-
 // Supabase Config
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -839,63 +838,73 @@ function App() {
   };
 
   const handleImageUpload = async (e, itemId) => {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
+    try {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
 
-  const item = items.find(i => i.id === itemId);
-  if (!item) return;
+      // Ambil album lama
+      const { data: existing, error: fetchError } = await supabase
+        .from("birthday_items")
+        .select("album_photos")
+        .eq("id", itemId)
+        .single();
 
-  // VALIDASI SIZE
-  for (const file of files) {
-    if (file.size > 4 * 1024 * 1024) {
-      alert("Ukuran tiap file maksimal 4MB");
-      return;
+      if (fetchError) throw fetchError;
+
+      const uploadedPhotos = [];
+
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) continue;
+
+        const ext = file.name.split(".").pop();
+        const fileName = `${itemId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+        // 1️⃣ Upload ke Storage
+        const { error: uploadError } = await supabase.storage
+          .from("albums")
+          .upload(fileName, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          });
+
+        if (uploadError) {
+          console.error("UPLOAD ERROR:", uploadError);
+          continue;
+        }
+
+        // 2️⃣ Public URL
+        const { data } = supabase.storage
+          .from("albums")
+          .getPublicUrl(fileName);
+
+        uploadedPhotos.push({
+          url: data.publicUrl,
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      if (!uploadedPhotos.length) return;
+
+      // 3️⃣ Update database
+      const updatedPhotos = [
+        ...(existing?.album_photos || []),
+        ...uploadedPhotos,
+      ];
+
+      const { error: updateError } = await supabase
+        .from("birthday_items")
+        .update({ album_photos: updatedPhotos })
+        .eq("id", itemId);
+
+      if (updateError) throw updateError;
+
+      console.log("✅ Upload multiple sukses:", uploadedPhotos);
+    } catch (err) {
+      console.error("❌ ERROR:", err.message);
+      alert(err.message);
     }
-  }
-
-  try {
-    // AMBIL FOTO EXISTING
-    const currentPhotos = item.album_photos || [];
-    const newPhotos = [];
-
-    // LOOP SEMUA FILE
-    for (const file of files) {
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      newPhotos.push({
-        url: base64,
-        description: "Foto",
-        created_at: new Date().toISOString(),
-      });
-    }
-
-    // UPDATE SEKALI
-    const { error } = await supabase
-      .from("birthday_items")
-      .update({
-        album_photos: [...currentPhotos, ...newPhotos],
-      })
-      .eq("id", itemId);
-
-    if (error) throw error;
-
-    await loadItems();
-    alert(`${newPhotos.length} foto berhasil ditambahkan ke album 📸`);
-
-  } catch (error) {
-    console.error(error);
-    alert("Gagal upload foto: " + error.message);
-  } finally {
-    // RESET INPUT supaya bisa upload file yang sama lagi
-    e.target.value = "";
-  }
-};
-
+  };
 
   const handleAddMoment = async () => {
     try {
