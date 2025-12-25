@@ -37,9 +37,9 @@ const LoadingScreen = () => {
         />
         <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" style={{ color: '#AFE1AF' }} />
         <p className="text-2xl font-bold text-gray-700 mb-2">
-          Memuat kenangan indah...
+          Loading...
         </p>
-        <p className="text-gray-500">Sabar ya, sebentar lagi! ✨</p>
+        <p className="text-gray-500">Sabar ya Bubu, lagi loading</p>
       </div>
     </div>
   );
