@@ -722,9 +722,6 @@ const Footer = () => {
           className="w-12 h-12 mx-auto mb-4 animate-pulse"
           fill="currentColor"
         />
-        <p className="text-lg md:text-xl font-semibold mb-2">
-          Dibuat dengan ❤️ untuk hari spesialmu
-        </p>
       </div>
     </div>
   );
