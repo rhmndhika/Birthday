@@ -75,7 +75,7 @@ const WaitingScreen = ({ daysUntil }) => {
       />
 
       {/* HEADER (SAMA DENGAN HOME) */}
-      <div className="relative overflow-hidden text-white py-12 px-4" style={{ background: 'linear-gradient(to right, #AFE1AF, #8FD18F, #6FA86F)' }}>
+      {/* <div className="relative overflow-hidden text-white py-12 px-4" style={{ background: 'linear-gradient(to right, #AFE1AF, #8FD18F, #6FA86F)' }}>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" />
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -85,13 +85,13 @@ const WaitingScreen = ({ daysUntil }) => {
             Kejutannya belum bisa dibuka dulu yaa 💝
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* CONTENT */}
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-xl mx-auto">
           <img
-            src="https://media.tenor.com/KtaMrc5ZcH4AAAAi/bubu-dudu-sseeyall.gif"
+            src="https://media.tenor.com/6jNtCfLsoH4AAAAj/bubu-dudu-sseeyall.gif"
             alt="Waiting"
             className="w-56 h-56 mx-auto mb-6 rounded-2xl"
           />
