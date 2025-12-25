@@ -12,6 +12,9 @@ import {
   Lock,
   X,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Images,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -74,19 +77,6 @@ const WaitingScreen = ({ daysUntil }) => {
         src="/music/backsound.mp3"
       />
 
-      {/* HEADER (SAMA DENGAN HOME) */}
-      {/* <div className="relative overflow-hidden text-white py-12 px-4" style={{ background: 'linear-gradient(to right, #AFE1AF, #8FD18F, #6FA86F)' }}>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <Cake className="w-16 h-16 animate-bounce mx-auto mb-4" />
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Selamat Ulang Tahun Tria! 🎉
-          </h1>
-          <p className="text-lg md:text-xl opacity-90">
-            Kejutannya belum bisa dibuka dulu yaa 💝
-          </p>
-        </div>
-      </div> */}
-
       {/* CONTENT */}
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-xl mx-auto">
@@ -119,7 +109,7 @@ const WaitingScreen = ({ daysUntil }) => {
         </div>
       </div>
 
-      {/* 🎵 MUSIC CONTROL — SAMA DENGAN HOME */}
+      {/* 🎵 MUSIC CONTROL */}
       <button
         onClick={toggleMusic}
         className="fixed bottom-6 right-6 z-50 text-white p-4 rounded-full shadow-xl hover:scale-110 transition-all flex items-center gap-2"
@@ -135,8 +125,6 @@ const WaitingScreen = ({ daysUntil }) => {
     </div>
   );
 };
-
-
 
 // Error Component
 const ErrorScreen = ({ error, onRetry }) => {
@@ -249,6 +237,7 @@ const EditModal = ({ item, onClose, onSave }) => {
             >
               <option value="image">Gambar</option>
               <option value="text">Teks</option>
+              <option value="album">Album</option>
             </select>
           </div>
 
@@ -290,6 +279,105 @@ const EditModal = ({ item, onClose, onSave }) => {
   );
 };
 
+// Album Modal Component
+const AlbumModal = ({ album, onClose }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const photos = album.album_photos || [];
+  
+  const nextPhoto = () => {
+    setCurrentIndex((prev) => (prev + 1) % photos.length);
+  };
+  
+  const prevPhoto = () => {
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-w-4xl w-full relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Album Frame */}
+        <div className="bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 rounded-3xl shadow-2xl p-6 md:p-8 border-8 border-amber-200 relative">
+          {/* Decorative Corners */}
+          <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-amber-400 rounded-tl-2xl"></div>
+          <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-amber-400 rounded-tr-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-amber-400 rounded-bl-2xl"></div>
+          <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-amber-400 rounded-br-2xl"></div>
+          
+          {/* Album Title */}
+          <div className="text-center mb-6">
+            <Images className="w-10 h-10 mx-auto mb-3 text-amber-600" />
+            <h2 className="text-3xl font-bold text-amber-900 mb-2">{album.title}</h2>
+            <p className="text-amber-700 text-sm">📸 {currentIndex + 1} dari {photos.length}</p>
+          </div>
+
+          {/* Photo Container */}
+          <div className="relative bg-white rounded-2xl shadow-lg p-4 mb-4">
+            <img
+              src={photos[currentIndex]?.url}
+              alt={photos[currentIndex]?.description}
+              className="w-full h-64 md:h-96 object-cover rounded-xl"
+            />
+            
+            {/* Navigation Buttons */}
+            {photos.length > 1 && (
+              <>
+                <button
+                  onClick={prevPhoto}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-amber-600 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextPhoto}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-amber-600 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="bg-white/70 rounded-xl p-4 backdrop-blur-sm">
+            <p className="text-gray-700 text-center font-medium">
+              {photos[currentIndex]?.description || album.description}
+            </p>
+          </div>
+
+          {/* Photo Dots Indicator */}
+          {photos.length > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {photos.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    idx === currentIndex ? "bg-amber-600 w-6" : "bg-amber-300"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute -top-4 -right-4 bg-white text-gray-800 w-12 h-12 rounded-full font-bold hover:bg-gray-100 shadow-lg border-4 border-amber-200 flex items-center justify-center"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Letter Modal Component
 const LetterModal = ({ wish, onClose }) => {
   return (
@@ -304,10 +392,10 @@ const LetterModal = ({ wish, onClose }) => {
         {/* Envelope */}
         <div className="rounded-t-3xl p-8 shadow-2xl border-4 border-white" style={{ background: 'linear-gradient(to bottom right, #D4EDD4, #C8E6C8)' }}>
           {/* Stamp */}
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-lg transform rotate-12 text-xs font-bold border-2 border-white">
+          {/* <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-lg transform rotate-12 text-xs font-bold border-2 border-white">
             ✉️ SPESIAL
           </div>
-          
+           */}
           {/* Letter Content */}
           <div className="bg-white rounded-2xl p-8 shadow-lg relative" style={{
             backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 35px, #e5e7eb 35px, #e5e7eb 36px)"
@@ -376,6 +464,69 @@ const ImageModal = ({ image, onClose }) => {
   );
 };
 
+// Gift Modal Component
+const GiftModal = ({ gift, onClose }) => {
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-3xl w-full max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Gift Box Container */}
+        <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-3xl shadow-2xl border-4 border-amber-200 overflow-hidden flex flex-col">
+          {/* Gift Image */}
+          {gift.url && (
+            <div className="relative bg-white m-6 rounded-2xl overflow-hidden shadow-lg">
+              <img
+                src={gift.url}
+                alt={gift.title}
+                className="w-full h-64 md:h-96 object-cover"
+              />
+              {/* Sparkle Effect */}
+              <div className="absolute top-4 right-4">
+                <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
+              </div>
+            </div>
+          )}
+
+          {/* Gift Content */}
+          <div className="p-6 md:p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-amber-50 max-h-[40vh]">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-inner">
+              <h2 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                {gift.title}
+              </h2>
+              
+              <div className="prose prose-lg max-w-none">
+                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap text-center">
+                  {gift.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Gift Tag */}
+          <div className="bg-gradient-to-r from-amber-100 to-orange-100 p-4 border-t-2 border-amber-200">
+            <p className="text-center text-amber-800 font-semibold italic">
+              Dari Dudu, atata atata~
+            </p>
+          </div>
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute -top-4 -right-4 bg-white text-gray-800 w-12 h-12 rounded-full font-bold hover:bg-gray-100 shadow-lg border-4 border-amber-200 flex items-center justify-center"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Category Button Component
 const CategoryButton = ({ category, isActive, onClick }) => {
   const Icon = category.icon;
@@ -399,7 +550,48 @@ const CategoryButton = ({ category, isActive, onClick }) => {
 const ItemCard = ({ item, isAdmin, onImageClick, onEdit, onDelete, onImageUpload }) => {
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all hover:scale-105 hover:shadow-2xl">
-      {item.type === "image" ? (
+      {item.type === "album" ? (
+        <div className="relative group bg-gradient-to-br from-amber-50 to-orange-50">
+          <div className="h-64 flex items-center justify-center p-6 relative overflow-hidden">
+            {/* Album Cover Design */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="grid grid-cols-2 gap-2 p-4 h-full">
+                {item.album_photos?.slice(0, 4).map((photo, idx) => (
+                  <img
+                    key={idx}
+                    src={photo.url}
+                    alt=""
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="relative z-10 text-center">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-4 border-amber-200">
+                <Images className="w-12 h-12 mx-auto mb-2 text-amber-600" />
+                <p className="text-lg font-bold text-amber-900">Album 📸</p>
+                <p className="text-sm text-amber-700">{item.album_photos?.length || 0} Foto</p>
+              </div>
+            </div>
+          </div>
+          
+          {isAdmin && (
+            <div className="absolute top-4 right-4">
+              <label className="bg-white text-gray-800 px-3 py-2 rounded-full text-xs font-semibold cursor-pointer hover:bg-gray-100 shadow-lg">
+                + Foto
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onImageUpload(e, item.id)}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      ) : item.type === "image" ? (
         <div className="relative group">
           <img
             src={item.url}
@@ -422,10 +614,24 @@ const ItemCard = ({ item, isAdmin, onImageClick, onEdit, onDelete, onImageUpload
           )}
         </div>
       ) : (
-        <div className="h-64 flex items-center justify-center p-6" style={{ background: 'linear-gradient(to bottom right, #AFE1AF, #8FD18F, #6FA86F)' }}>
+        <div className="h-64 flex items-center justify-center p-6 relative group" style={{ background: 'linear-gradient(to bottom right, #AFE1AF, #8FD18F, #6FA86F)' }}>
           <h3 className="text-2xl font-bold text-white text-center">
             {item.title}
           </h3>
+
+          {isAdmin && item.category === "gifts" && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4">
+              <label className="bg-white text-gray-800 px-4 py-2 rounded-full text-sm font-semibold cursor-pointer hover:bg-gray-100">
+                + Tambah Foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onImageUpload(e, item.id)}
+                />
+              </label>
+            </div>
+          )}
         </div>
       )}
 
@@ -436,6 +642,16 @@ const ItemCard = ({ item, isAdmin, onImageClick, onEdit, onDelete, onImageUpload
         <p className="text-sm md:text-base text-gray-600 mb-3 line-clamp-2">
           {item.description}
         </p>
+
+          {item.category === "gifts" && item.url && (
+            <button
+              onClick={() => onImageClick(item)}
+              className="flex-1 text-white px-4 py-2 rounded-full text-sm font-semibold hover:shadow-lg transition-all"
+              style={{ background: 'linear-gradient(to right, #F59E0B, #D97706)' }}
+            >
+              🎁 Lihat Hadiah
+            </button>
+          )}
         
         <div className="flex gap-2">
           {item.category === "wishes" && (
@@ -445,6 +661,15 @@ const ItemCard = ({ item, isAdmin, onImageClick, onEdit, onDelete, onImageUpload
               style={{ background: 'linear-gradient(to right, #AFE1AF, #8FD18F)' }}
             >
               📖 Baca Surat
+            </button>
+          )}
+          
+          {item.type === "album" && (
+            <button
+              onClick={() => onImageClick(item)}
+              className="flex-1 text-white px-4 py-2 rounded-full text-sm font-semibold hover:shadow-lg transition-all bg-gradient-to-r from-amber-400 to-orange-400"
+            >
+              📸 Lihat Album
             </button>
           )}
           
@@ -512,6 +737,8 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedWish, setSelectedWish] = useState(null);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [selectedGift, setSelectedGift] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -526,7 +753,8 @@ function App() {
   const categories = [
     { id: "all", name: "Semua", icon: Sparkles },
     { id: "wishes", name: "Ucapan", icon: MessageCircle },
-    { id: "memories", name: "Kenangan", icon: Camera }
+    { id: "memories", name: "Kenangan", icon: Camera },
+    { id: "gifts", name: "Hadiah", icon: Gift }
   ];
 
   // Check if today is December 28, 2025 OR has special access
@@ -614,40 +842,76 @@ function App() {
   };
 
   const handleImageUpload = async (e, itemId) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
 
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // VALIDASI SIZE
+  for (const file of files) {
     if (file.size > 4 * 1024 * 1024) {
-      alert("Ukuran file maksimal 4MB");
+      alert("Ukuran tiap file maksimal 4MB");
       return;
     }
+  }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const { error } = await supabase
-          .from("birthday_items")
-          .update({ url: event.target.result })
-          .eq("id", itemId);
+  try {
+    // AMBIL FOTO EXISTING
+    const currentPhotos = item.album_photos || [];
+    const newPhotos = [];
 
-        if (error) throw error;
-        await loadItems();
-        alert("Foto berhasil diupdate!");
-      } catch (error) {
-        alert("Gagal mengupdate foto: " + error.message);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+    // LOOP SEMUA FILE
+    for (const file of files) {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      newPhotos.push({
+        url: base64,
+        description: "Foto",
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    // UPDATE SEKALI
+    const { error } = await supabase
+      .from("birthday_items")
+      .update({
+        album_photos: [...currentPhotos, ...newPhotos],
+      })
+      .eq("id", itemId);
+
+    if (error) throw error;
+
+    await loadItems();
+    alert(`${newPhotos.length} foto berhasil ditambahkan ke album 📸`);
+
+  } catch (error) {
+    console.error(error);
+    alert("Gagal upload foto: " + error.message);
+  } finally {
+    // RESET INPUT supaya bisa upload file yang sama lagi
+    e.target.value = "";
+  }
+};
+
 
   const handleAddMoment = async () => {
     try {
+      // Get the maximum ID from current items
+      const maxId = items.length > 0 ? Math.max(...items.map(item => item.id)) : 0;
+      
       const { error } = await supabase.from("birthday_items").insert([
         {
+          id: maxId + 1, // Use next available ID
           category: "memories",
           type: "image",
           url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
-          title: "Momen Baru",
+          title: "Momen",
           description: "Tambahkan kenangan spesial",
         },
       ]);
@@ -700,6 +964,10 @@ function App() {
   const handleItemClick = (item) => {
     if (item.category === "wishes") {
       setSelectedWish(item);
+    } else if (item.category === "gifts") {
+      setSelectedGift(item);
+    } else if (item.type === "album") {
+      setSelectedAlbum(item);
     } else {
       setSelectedImage(item);
     }
@@ -804,10 +1072,38 @@ function App() {
         />
       )}
 
-      {selectedImage && selectedImage.category !== "wishes" && (
-        <ImageModal
-          image={selectedImage}
-          onClose={() => setSelectedImage(null)}
+      {selectedGift && (
+        <GiftModal
+          gift={selectedGift}
+          onClose={() => setSelectedGift(null)}
+        />
+      )}
+
+      {selectedImage && selectedImage.category !== "wishes" && selectedImage.category !== "gifts" && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="max-w-4xl max-h-[90vh] relative">
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.title}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 bg-white text-gray-800 w-10 h-10 rounded-full font-bold hover:bg-gray-100"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedAlbum && (
+        <AlbumModal
+          album={selectedAlbum}
+          onClose={() => setSelectedAlbum(null)}
         />
       )}
     </div>
